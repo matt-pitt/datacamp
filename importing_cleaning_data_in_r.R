@@ -46,8 +46,25 @@ missing <- lapply(sales5[, date_cols], is.na)
 num_missing <- sapply(missing, sum)
 
 
+#Chapter 2 - 
+# Remove rows 1, 7, and 11 of mbta: mbta2
+mbta2 <- mbta[-c(1,7,11),]
 
+# Remove the first column of mbta2: mbta3
+mbta3 <- mbta2[,-1]
 
+# Gather columns of mbta3: mbta4
+mbta4 <- gather(mbta3, key = "month", value = "thou_riders", - mode)
 
+# Spread the contents of mbta4: mbta5
+mbta5 <- spread(mbta4, mode, thou_riders)
 
+# Split month column into month and year: mbta6
+mbta6 <- separate(mbta5, month, c("year", "month"), sep = "-")
+
+# Find the row number of the incorrect value: i
+i <- which(mbta6$Boat > 30)
+
+# Replace the incorrect value with 4
+mbta6$Boat[i] <- 4
 
