@@ -162,3 +162,5 @@ example <- mutate_at(att5, vars(-state), funs(as.numeric))
 cols <- -1
 # Use sapply to coerce cols to numeric
 att5[, cols] <- sapply(att5[, cols], as.numeric)
+
+#attempting to commit
