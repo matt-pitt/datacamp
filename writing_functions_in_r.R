@@ -1,5 +1,5 @@
 #intro to writing functions. 
-#Chapter 1
+#Chapter 1 How to write a function#######
 
 #getting some best practice in, this code shows the arguments of a function
 # Note the arguments to median()
@@ -87,7 +87,7 @@ snake_river_explanatory %>%
   mutate(predicted_n_visits = predict(model, ., type = "response")) %>%
   arrange(desc(predicted_n_visits))
 
-#Chapter 2
+#Chapter 2 All about arguments ####
 #I changed up the original function and replaced with default settings
 # Set the default for labels to NULL
 cut_by_quantile <- function(x, n = 5, na.rm = FALSE, labels = NULL, interval_type) {
@@ -203,6 +203,181 @@ calc_harmonic_mean <- function(x, na.rm = FALSE) {
     get_reciprocal() %>%
     mean(na.rm = na.rm) %>%
     get_reciprocal()
+}
+
+#chapter 3 Return values and scope ####
+#leap year function
+is_leap_year <- function(year) {
+  # If year is div. by 400 return TRUE
+  if(is_divisible_by(year, 400)) {
+    return(TRUE)
+  }
+  # If year is div. by 100 return FALSE
+  if(is_divisible_by(year, 100)) {
+    return(FALSE)
+  }  
+  # If year is div. by 4 return TRUE
+  if(is_divisible_by(year, 4)) {
+    return(TRUE)
+  } 
+  
+  # Otherwise return FALSE
+  else(FALSE)
+}
+
+# Define a scatter plot fn with data and formula args
+pipeable_plot <- function(data, formula) {
+  # Call plot() with the formula interface
+  plot(formula, data)
+  # Invisibly return the input dataset
+  invisible(data)
+}
+
+# Draw the scatter plot of dist vs. speed again
+plt_dist_vs_speed <- cars %>% 
+  pipeable_plot(dist ~ speed)
+
+# Now the plot object has a value
+plt_dist_vs_speed
+
+
+# Look at the structure of model (it's a mess!)
+#library(c(broom, zeallot))
+str(model)
+
+# Use broom tools to get a list of 3 data frames
+list(
+  # Get model-level values
+  model = glance(model),
+  # Get coefficient-level values
+  coefficients = tidy(model),
+  # Get observation-level values
+  observations = augment(model)
+)
+
+# Wrap this code into a function, groom_model
+groom_model <- function(model){
+  list(
+    model = glance(model),
+    coefficients = tidy(model),
+    observations = augment(model)
+  )
+}
+
+# From previous step
+groom_model <- function(model) {
+  list(
+    model = glance(model),
+    coefficients = tidy(model),
+    observations = augment(model)
+  )
+}
+
+# Call groom_model on model, assigning to 3 variables
+c(mdl, cff, obs) %<-% groom_model(model)
+
+# See these individual variables
+mdl; cff; obs
+
+#Adding attributes to functions which stay stored in the outputs
+pipeable_plot <- function(data, formula) {
+  plot(formula, data)
+  # Add a "formula" attribute to data
+  attr(data, "formula") <- formula
+  invisible(data)
+}
+
+# From previous exercise
+plt_dist_vs_speed <- cars %>% 
+  pipeable_plot(dist ~ speed)
+
+# Examine the structure of the result
+str(plt_dist_vs_speed)
+
+#doing some work with environments, unsure on purpose at the moment.
+# From previous steps
+rsa_lst <- list(
+  capitals = capitals,
+  national_parks = national_parks,
+  population = population
+)
+rsa_env <- list2env(rsa_lst)
+
+# Find the parent environment of rsa_env
+parent <- parent.env(rsa_env)
+
+# Print its name
+environmentName(parent)
+
+
+#checking between environments
+# Compare the contents of the global environment and rsa_env
+ls.str(globalenv())
+ls.str(rsa_env)
+
+# Does population exist in rsa_env?
+exists("population", envir = rsa_env)
+
+# Does population exist in rsa_env, ignoring inheritance?
+exists("population", envir = rsa_env, inherits = FALSE)
+
+#ohhhh functions have there own environment, you can define outside of the function name.
+#can look outside function environment but not vice versa. Inside function goes first.
+
+
+
+#Chapter 4 Case Study on Grain Yields ####
+# Write a function to convert sq. yards to sq. meters
+sq_yards_to_sq_meters <- function(sq_yards) {
+  sq_yards %>%
+    # Take the square root
+    sqrt() %>%
+    # Convert yards to meters
+    yards_to_meters() %>%
+    # Square it
+    raise_to_power(2)
+}
+
+# Write a function to convert acres to hectares
+acres_to_hectares <- function(acres) {
+  acres %>%
+    # Convert acres to sq yards
+    acres_to_sq_yards() %>%
+    # Convert sq yards to sq meters
+    sq_yards_to_sq_meters() %>%
+    # Convert sq meters to hectares
+    sq_meters_to_hectares()
+}
+
+# Write a function to convert bushels to lbs
+bushels_to_lbs <- function(bushels, crop) {
+  # Define a lookup table of scale factors
+  c(barley = 48, corn = 56, wheat = 60) %>%
+    # Extract the value for the crop
+    extract(crop) %>%
+    # Multiply by the no. of bushels
+    multiply_by(bushels)
+}
+
+# Write a function to convert bushels to kg
+bushels_to_kgs <- function(bushels, crop) {
+  bushels %>%
+    # Convert bushels to lbs for this crop
+    bushels_to_lbs(crop) %>%
+    # Convert lbs to kgs
+    lbs_to_kgs()
+}
+
+
+# Write a function to convert bushels/acre to kg/ha
+bushels_per_acre_to_kgs_per_hectare <- function(bushels_per_acre, crop = c("barley", "corn", "wheat")) {
+  # Match the crop argument
+  crop <- match.arg(crop)
+  bushels_per_acre %>%
+    # Convert bushels to kgs for this crop
+    bushels_to_kgs(crop) %>%
+    # Convert harmonic acres to ha
+    harmonic_acres_to_hectares()
 }
 
 
