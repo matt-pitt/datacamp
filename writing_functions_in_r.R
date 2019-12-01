@@ -380,4 +380,146 @@ bushels_per_acre_to_kgs_per_hectare <- function(bushels_per_acre, crop = c("barl
     harmonic_acres_to_hectares()
 }
 
+corn %>%
+  # Add some columns
+  mutate(
+    # Convert farmed area from acres to ha
+    farmed_area_ha = acres_to_hectares(farmed_area_acres),
+    # Convert yield from bushels/acre to kg/ha
+    yield_kg_per_ha = bushels_per_acre_to_kgs_per_hectare(
+      yield_bushels_per_acre,
+      crop = "corn"
+    )
+  )
 
+# Wrap the code above into a function
+fortify_with_metric_units <- function(data, crop) {
+  data %>%
+    mutate(
+      farmed_area_ha = acres_to_hectares(farmed_area_acres),
+      yield_kg_per_ha = bushels_per_acre_to_kgs_per_hectare(
+        yield_bushels_per_acre, 
+        crop = crop
+      )
+    )
+}
+
+# Try it on the wheat dataset
+fortify_with_metric_units(wheat, crop = "wheat")
+
+# Using corn, plot yield (kg/ha) vs. year
+ggplot(corn, aes(x = year, y = yield_kg_per_ha)) +
+  # Add a line layer, grouped by state
+  geom_line(aes(group = state)) +
+  # Add a smooth trend layer
+  geom_smooth()
+
+
+# Wrap this plotting code into a function
+yield_vs_year <- function(data){
+  ggplot(data, aes(year, yield_kg_per_ha)) +
+    geom_line(aes(group = state)) +
+    geom_smooth()
+}
+
+# Test it on the wheat dataset
+yield_vs_year(wheat)
+
+# Inner join the corn dataset to usa_census_regions by state
+corn %>%
+  inner_join(usa_census_regions, join = "state")
+
+# Wrap this code into a function
+fortify_with_census_region <- function(data){
+  data %>%
+    inner_join(usa_census_regions, by = "state")
+}
+
+# Try it on the wheat dataset
+fortify_with_census_region(wheat)
+
+
+# Plot yield vs. year for the corn dataset
+plot_yield_vs_year(corn) +
+  # Facet, wrapped by census region
+  facet_wrap(vars(census_region))
+
+
+# Wrap this code into a function
+plot_yield_vs_year_by_region <- function(data){
+  plot_yield_vs_year(data) +
+    facet_wrap(vars(census_region))
+}
+
+# Try it on the wheat dataset
+plot_yield_vs_year_by_region(wheat)
+
+# Run a generalized additive model of 
+# yield vs. smoothed year and census region
+gam(yield_kg_per_ha ~ s(year) + census_region, data = corn)
+
+
+# Wrap the model code into a function
+run_gam_yield_vs_year_by_region <- function(data){
+  gam(yield_kg_per_ha ~ s(year) + census_region, data = data)
+}
+
+# Try it on the wheat dataset
+run_gam_yield_vs_year_by_region(wheat)
+
+# Make predictions in 2050  
+predict_this <- data.frame(
+  year = 2050,
+  census_region = census_regions
+) 
+
+# Predict the yield
+pred_yield_kg_per_ha <- predict(corn_model, predict_this, type = "response")
+
+predict_this %>%
+  # Add the prediction as a column of predict_this 
+  mutate(pred_yield_kg_per_ha = pred_yield_kg_per_ha)
+
+# Wrap this prediction code into a function
+predict_yields <- function(model, year){
+  predict_this <- data.frame(
+    year = year,
+    census_region = census_regions
+  ) 
+  pred_yield_kg_per_ha <- predict(model, predict_this, type = "response")
+  predict_this %>%
+    mutate(pred_yield_kg_per_ha = pred_yield_kg_per_ha)
+}
+
+# Try it on the wheat dataset
+predict_yields(wheat_model, 2050)
+
+#last dataset combining allt he functions
+fortified_barley <- barley %>% 
+  # Fortify with metric units
+  fortify_with_metric_units() %>%
+  # Fortify with census regions
+  fortify_with_census_region()
+
+# See the result
+glimpse(fortified_barley)
+
+# From previous step
+fortified_barley <- barley %>% 
+  fortify_with_metric_units() %>%
+  fortify_with_census_region()
+
+# Plot yield vs. year by region
+plot_yield_vs_year_by_region(fortified_barley)
+
+
+# From previous step
+fortified_barley <- barley %>% 
+  fortify_with_metric_units() %>%
+  fortify_with_census_region()
+
+fortified_barley %>% 
+  # Run a GAM of yield vs. year by region
+  run_gam_yield_vs_year_by_region()  %>% 
+  # Make predictions of yields in 2050
+  predict_yields(2050)
